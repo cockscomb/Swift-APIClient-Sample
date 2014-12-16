@@ -58,8 +58,8 @@ public class Message: MTLModel, MTLJSONSerializing {
 }
 
 public enum Response<T: MTLModel where T: MTLJSONSerializing> {
-    case One(T)
-    case Many([T])
+    case One(@autoclosure() -> T)
+    case Many(@autoclosure() -> [T])
     case Error(NSError?)
 
     static func parse<T: MTLModel where T: MTLJSONSerializing>(JSON: AnyObject) -> Response<T> {

@@ -22,11 +22,9 @@ class APIClientTests: XCTestCase {
         let expectation = expectationWithDescription("Status")
         client.status { (response) -> Void in
 
-            println(response)
-
             switch (response) {
             case .One(let status):
-                XCTAssertEqual(status.status!, "good", "Status is good")
+                XCTAssertEqual(status().status!, "good", "Status is good")
             default:
                 XCTFail("Response must have one status")
             }
@@ -42,11 +40,9 @@ class APIClientTests: XCTestCase {
         let expectation = expectationWithDescription("Last Message")
         client.lastMessage { (response) -> Void in
 
-            println(response)
-
             switch (response) {
             case .One(let message):
-                XCTAssertEqual(message.status!, "good", "Status is good")
+                XCTAssertEqual(message().status!, "good", "Status is good")
             default:
                 XCTFail("Response must have one message")
             }
@@ -62,11 +58,9 @@ class APIClientTests: XCTestCase {
         let expectation = expectationWithDescription("Messages")
         client.messages { (response) -> Void in
 
-            println(response)
-
             switch (response) {
             case .Many(let messages):
-                XCTAssertEqual(messages.first!.status!, "good", "Status is good")
+                XCTAssertEqual(messages().first!.status!, "good", "Status is good")
             default:
                 XCTFail("Response must have many messages")
             }

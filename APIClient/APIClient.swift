@@ -57,46 +57,38 @@ public class Message: MTLModel, MTLJSONSerializing {
     }
 }
 
+public enum Response<T: MTLModel where T: MTLJSONSerializing> {
+    case One(T)
+    case Many([T])
+    case Error(NSError?)
+
+    static func parse<T: MTLModel where T: MTLJSONSerializing>(JSON: AnyObject) -> Response<T> {
+        var error: NSError?
+        if let array = JSON as? [AnyObject] {
+            if let xs = MTLJSONAdapter.modelsOfClass(T.self, fromJSONArray: array, error: &error) as? [T] {
+                return .Many(xs)
+            }
+        } else if let object = JSON as? [NSObject: AnyObject] {
+            if let x = MTLJSONAdapter.modelOfClass(T.self, fromJSONDictionary: object, error: &error) as? T {
+                return .One(x)
+            }
+        }
+        return .Error(error)
+    }
+}
+
 enum Endpoint {
     case Status
     case LastMessage
     case Messages
 
-    func request<T: MTLModel where T: MTLJSONSerializing>(manager: AFHTTPSessionManager, parameters: [String: String]?, handler: ((response: T?, error: NSError?) -> Void)) -> NSURLSessionDataTask {
+    func request<T: MTLModel where T: MTLJSONSerializing>(manager: AFHTTPSessionManager, parameters: [String: String]?, handler:(response: Response<T>) -> Void) -> NSURLSessionDataTask {
         let success: ((NSURLSessionDataTask!, AnyObject!) -> Void) = {
-            var error: NSError?
-            var response: T? = nil
-
-            if let dictonary = $1 as? [NSObject : AnyObject] {
-                response = MTLJSONAdapter.modelOfClass(T.self, fromJSONDictionary: dictonary, error: &error) as? T
-            }
-
-            handler(response: response, error: error)
+            handler(response: Response<T>.parse($1))
         }
         let failure: ((NSURLSessionDataTask!, NSError!) -> Void) = {
-            handler(response: nil, error: $1)
+            handler(response: Response.Error($1))
         }
-        return request(manager, parameters: parameters, success: success, failure: failure)
-    }
-
-    func request<T: MTLModel where T: MTLJSONSerializing>(manager: AFHTTPSessionManager, parameters: [String: String]?, handler: ((response: [T]?, error: NSError?) -> Void)) -> NSURLSessionDataTask {
-        let success: ((NSURLSessionDataTask!, AnyObject!) -> Void) = {
-            var error: NSError?
-            var response: [T]? = nil
-
-            if let array = $1 as? [AnyObject] {
-                response = MTLJSONAdapter.modelsOfClass(T.self, fromJSONArray: array, error: &error) as? [T]
-            }
-
-            handler(response: response, error: error)
-        }
-        let failure: ((NSURLSessionDataTask!, NSError!) -> Void) = {
-            handler(response: nil, error: $1)
-        }
-        return request(manager, parameters: parameters, success: success, failure: failure)
-    }
-
-    private func request(manager: AFHTTPSessionManager, parameters: [String: String]?, success: ((NSURLSessionDataTask!, AnyObject!) -> Void), failure: ((NSURLSessionDataTask!, NSError!) -> Void)) -> NSURLSessionDataTask {
 
         switch (self) {
         case .Status:
@@ -112,15 +104,15 @@ enum Endpoint {
 public class APIClient {
     let manager = AFHTTPSessionManager(baseURL: NSURL(string: "https://status.github.com/")!)
 
-    public func status(handler: ((response: Status?, error: NSError?) -> Void)) {
+    public func status(handler: (response: Response<Status>) -> Void) {
         Endpoint.Status.request(manager, parameters: nil, handler: handler)
     }
 
-    public func lastMessage(handler: ((response: Message?, error: NSError?) -> Void)) {
+    public func lastMessage(handler: (response: Response<Message>) -> Void) {
         Endpoint.LastMessage.request(manager, parameters: nil, handler: handler)
     }
 
-    public func messages(handler: ((response: [Message]?, error: NSError?) -> Void)) {
+    public func messages(handler: (response: Response<Message>) -> Void) {
         Endpoint.Messages.request(manager, parameters: nil, handler: handler)
     }
 }

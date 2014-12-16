@@ -20,14 +20,16 @@ class APIClientTests: XCTestCase {
     
     func testStatus() {
         let expectation = expectationWithDescription("Status")
-        client.status { (response, error) -> Void in
+        client.status { (response) -> Void in
 
             println(response)
 
-            XCTAssertNil(error, "error should be nil")
-            XCTAssertNotNil(response, "response should not be nil")
-
-            XCTAssertEqual(response!.status!, "good", "status is good")
+            switch (response) {
+            case .One(let status):
+                XCTAssertEqual(status.status!, "good", "Status is good")
+            default:
+                XCTFail("Response must have one status")
+            }
 
             expectation.fulfill()
         }
@@ -37,15 +39,17 @@ class APIClientTests: XCTestCase {
     }
 
     func testLastMessage() {
-        let expectation = expectationWithDescription("Status")
-        client.lastMessage { (response, error) -> Void in
+        let expectation = expectationWithDescription("Last Message")
+        client.lastMessage { (response) -> Void in
 
             println(response)
 
-            XCTAssertNil(error, "error should be nil")
-            XCTAssertNotNil(response, "response should not be nil")
-
-            XCTAssertEqual(response!.status!, "good", "status is good")
+            switch (response) {
+            case .One(let message):
+                XCTAssertEqual(message.status!, "good", "Status is good")
+            default:
+                XCTFail("Response must have one message")
+            }
 
             expectation.fulfill()
         }
@@ -55,15 +59,17 @@ class APIClientTests: XCTestCase {
     }
 
     func testMessages() {
-        let expectation = expectationWithDescription("Status")
-        client.messages { (response, error) -> Void in
+        let expectation = expectationWithDescription("Messages")
+        client.messages { (response) -> Void in
 
             println(response)
 
-            XCTAssertNil(error, "error should be nil")
-            XCTAssertNotNil(response, "response should not be nil")
-
-            XCTAssertEqual(response!.first!.status!, "good", "status is good")
+            switch (response) {
+            case .Many(let messages):
+                XCTAssertEqual(messages.first!.status!, "good", "Status is good")
+            default:
+                XCTFail("Response must have many messages")
+            }
 
             expectation.fulfill()
         }
@@ -71,5 +77,5 @@ class APIClientTests: XCTestCase {
             
         })
     }
-    
+
 }
